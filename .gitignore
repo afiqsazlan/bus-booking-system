@@ -1,0 +1,55 @@
+# Compiled Object files
+*.slo
+*.lo
+*.o
+*.obj
+
+# Precompiled Headers
+*.gch
+*.pch
+
+# Compiled Dynamic libraries
+*.so
+*.dylib
+*.dll
+
+# Fortran module files
+*.mod
+
+# Compiled Static libraries
+*.lai
+*.la
+*.a
+*.lib
+
+# Executables
+*.exe
+*.out
+*.app
+
+# CMake build directories
+build/
+cmake-build-debug/
+
+.idea
+
+# Visual Studio Code build directory
+.vscode/
+
+# Eclipse project files
+.project
+.cproject
+.settings/
+
+# Xcode build directory
+*.xcodeproj/
+
+# Sublime Text build directory
+*.sublime-workspace
+
+# CMakeLists.txt.user files
+CMakeLists.txt.user
+
+# Unity build directory
+*.unityproj
+Library/
