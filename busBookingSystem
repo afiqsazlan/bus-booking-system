@@ -27,6 +27,8 @@ int seatsAvailable[numDestinations][numTimes] = {
 
 class BookingSystem {
 private:
+    string name;
+    string icNumber;
     string destination;
     string time;
     double price;
@@ -67,12 +69,17 @@ public:
     BookingSystem() : price(0.0), seatsAvailable(0), totalPrice(0.0), bookingCount(0) {}
 
     void displayDestinations() {
-        cout << "Destinations available: Johor, Melaka, Pahang, Perak, Kedah\n";
+            cout << "\nInsert your name: ";
+            cin >> name;
+            cout<<"\nInsert your IC number: ";
+            cin>> icNumber;
+            cout << "Destinations available: Johor, Melaka, Pahang, Perak, Kedah\n";
     }
 
     void insertDestination() {
         bool validInput = false;
         while (!validInput) {
+            
             cout << "\nChoose your destination: ";
             cin >> destination;
             int index = getDestinationIndex();
@@ -174,6 +181,8 @@ public:
         }
         recordBooking();
         cout << "\nSummary of Booking:\n";
+        cout << "Name: " << name << endl;
+        cout << "IC Number: " << icNumber << endl;
         cout << "Destination: " << destination << endl;
         cout << "Time: " << time << endl;
         cout << "Price: RM" << totalPrice << endl;
@@ -181,7 +190,7 @@ public:
         cout << "\nEnjoy your trip !\n";
     }
 
-   
+};
 
 int main() {
     BookingSystem system;
