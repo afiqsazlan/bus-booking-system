@@ -12,7 +12,7 @@ struct Booking {
     double totalPrice;
 };
 
-const string destinations[] = {"johor", "melaka", "pahang", "kedah", "perak"};
+const string destinations[] = {"Johor", "Melaka", "Pahang", "Kedah", "Perak"};
 const int numDestinations = 5;
 const string times[] = {"10am", "11am", "12pm", "1pm", "2pm", "3pm", "4pm", "5pm", "6pm", "7pm", "8pm", "9pm", "10pm"};
 const int numTimes = 13;
@@ -70,9 +70,19 @@ public:
 
     void displayDestinations() {
             cout << "\nInsert your name: ";
-            cin >> name;
-            cout<<"\nInsert your IC number: ";
-            cin>> icNumber;
+            getline(cin, name);
+            
+            bool validIC = false;
+                while (!validIC) {
+                    cout << "\nInsert your IC number: ";
+                    cin >> icNumber;
+            
+                    if (icNumber.length() == 12) {
+                        validIC = true;
+                    } else {
+                        cout << "Invalid IC number. It must contain exactly 12 characters. Please try again.\n";
+                    }
+                }
             cout << "Destinations available: Johor, Melaka, Pahang, Perak, Kedah\n";
     }
 
