@@ -1,190 +1,219 @@
 #include <iostream>
-#include <vector>
-#include <map>
-
+#include <string>
 using namespace std;
 
-// Define a record for a bus route
-struct Route {
-    int routeNumber;
-    string origin;
+const int maxBookings = 100;
+
+struct Booking {
     string destination;
-    int availableSeats;
-    float fare;
+    string time;
+    int seats;
+    bool insurance;
+    double totalPrice;
 };
 
-// Function declarations
-vector<Route> loadRoutes();
-Route *findRouteByNumber(vector<Route> &routes, int routeNumber);
-void displayRoutes(const vector<Route> &routes);
-void bookSeat(vector<Route> &routes, vector<Route *> &cart);
-void viewCart(const vector<Route*> &cart);
-void displaySectionTitle(const string &title);
-void displayErrorMessage(const string &message);
-
-enum MenuChoice {
-    DISPLAY_ROUTES = 1,
-    BOOK_SEAT = 2,
-    VIEW_CART = 3,
-    EXIT = 9
+const string destinations[] = {"Johor", "Melaka", "Pahang", "Kedah", "Perak"};
+const int numDestinations = 5;
+const string times[] = {"10am", "11am", "12pm", "1pm", "2pm", "3pm", "4pm", "5pm", "6pm", "7pm", "8pm", "9pm", "10pm"};
+const int numTimes = 13;
+const double prices[] = {35, 10, 10, 46, 27};
+int seatsAvailable[numDestinations][numTimes] = {
+    {6, 8, 3, 30, 32, 5, 10, 6, 18, 2, 6, 24, 10},  // johor
+    {6, 8, 3, 30, 32, 5, 10, 6, 18, 2, 6, 24, 10},  // melaka
+    {6, 8, 3, 30, 32, 5, 10, 6, 18, 2, 6, 24, 10},  // pahang
+    {6, 8, 3, 30, 32, 5, 10, 6, 18, 2, 6, 24, 10},  // kedah
+    {6, 8, 3, 30, 32, 5, 10, 6, 18, 2, 6, 24, 10}   // perak
 };
 
-enum ConfirmationOption {
-    CONFIRM = 1,
-    CANCEL = 0
-};
+class BookingSystem {
+private:
+    string name;
+    string icNumber;
+    string destination;
+    string time;
+    double price;
+    int seatsAvailable;
+    string insuranceOption;
+    int seats;
+    double totalPrice;
+    Booking bookings[maxBookings];
+    int bookingCount;
 
-const map<MenuChoice, string> menuLabels = {
-        {DISPLAY_ROUTES, "Display Routes"},
-        {BOOK_SEAT,      "Book a Seat"},
-        {VIEW_CART,      "View Cart"},
-        {EXIT,           "Exit"},
-};
+    int getDestinationIndex() {
+        for (int i = 0; i < numDestinations; ++i) {
+            if (destination == destinations[i]) {
+                return i;
+            }
+        }
+        return -1; // Invalid destination
+    }
 
-const string currencySymbol = "MYR";
+    int getTimeIndex() {
+        for (int i = 0; i < numTimes; ++i) {
+            if (time == times[i]) {
+                return i;
+            }
+        }
+        return -1; // Invalid time
+    }
+
+    void recordBooking() {
+        if (bookingCount < maxBookings) {
+            bookings[bookingCount++] = {destination, time, seats, (insuranceOption == "yes"), totalPrice};
+        } else {
+            cout << "Booking record is full!\n";
+        }
+    }
+
+public:
+    BookingSystem() : price(0.0), seatsAvailable(0), totalPrice(0.0), bookingCount(0) {}
+
+    void displayDestinations() {
+            cout << "\nInsert your name: ";
+            getline(cin, name);
+
+            bool validIC = false;
+                while (!validIC) {
+                    cout << "\nInsert your IC number: ";
+                    cin >> icNumber;
+
+                    if (icNumber.length() == 12) {
+                        validIC = true;
+                    } else {
+                        cout << "Invalid IC number. It must contain exactly 12 characters. Please try again.\n";
+                    }
+                }
+            cout << "Destinations available: Johor, Melaka, Pahang, Perak, Kedah\n";
+    }
+
+    void insertDestination() {
+        bool validInput = false;
+        while (!validInput) {
+
+            cout << "\nChoose your destination: ";
+            cin >> destination;
+            int index = getDestinationIndex();
+            if (index != -1) {
+                price = prices[index];
+                validInput = true;
+            } else {
+                cout << "Wrong input, please try again\n\n";
+            }
+        }
+    }
+
+    void displayPriceAndTimes() {
+        cout << "Price: RM" << price << endl;
+        cout << "\nAvailable times:\n";
+        for (const string& t : times) {
+            cout << t << ", ";
+        }
+        cout << "\n\n";
+    }
+
+    void insertTime() {
+        bool validInput = false;
+        while (!validInput) {
+            cout << "Enter Time: ";
+            cin >> time;
+            int index = getTimeIndex();
+            if (index != -1) {
+                int destIndex = getDestinationIndex();
+                seatsAvailable = ::seatsAvailable[destIndex][index];
+                validInput = true;
+            } else {
+                cout << "Wrong input, please try again\n\n";
+            }
+        }
+    }
+
+    void displayRemainingSeats() {
+        bool validInput = false;
+        string book;
+        while (!validInput) {
+            cout << "\nSeats available: " << seatsAvailable << endl;
+            cout << "Do you want to choose another destination or time? (yes or no): ";
+            cin >> book;
+            if (book == "yes") {
+                insertDestination();
+                displayPriceAndTimes();
+                insertTime();
+                continue;
+            } else if (book == "no") {
+                return;
+            } else {
+                cout << "Wrong input, please try again\n\n";
+            }
+        }
+    }
+
+    void insertSeatToBook() {
+        if (seatsAvailable == 0) {
+            cout << "\nNo seats available to book.\n";
+            return;
+        }
+        bool validInput = false;
+        do {
+            cout << "\nEnter number of seats to book: ";
+            cin >> seats;
+            if (seats <= seatsAvailable) {
+                seatsAvailable -= seats;
+                cout << seats << " seats successfully booked.\n";
+                cout << "Remaining seat available: " << seatsAvailable << endl;
+                validInput = true;
+            } else {
+                cout << "Not enough available seats!\n";
+            }
+        } while (!validInput);
+    }
+
+    void displayInsuranceOptions() {
+        cout << "\nDo you want to include insurance coverage? (RM0.50 per head): Yes or No \n";
+    }
+
+    void insertInsuranceOption() {
+        cout << "Enter Insurance Option (yes/no): ";
+        cin >> insuranceOption;
+        if (insuranceOption == "yes") {
+            totalPrice = (0.5 * seats) + (seats * price);
+        } else if (insuranceOption == "no") {
+            totalPrice = seats * price;
+        } else {
+            cout << "Invalid Option!\n";
+            insuranceOption = "";
+        }
+    }
+
+    void displayTotal() {
+        if (destination.empty() || time.empty()) {
+            cout << "Booking details are incomplete.\n";
+            return;
+        }
+        recordBooking();
+        cout << "\nSummary of Booking:\n";
+        cout << "Name: " << name << endl;
+        cout << "IC Number: " << icNumber << endl;
+        cout << "Destination: " << destination << endl;
+        cout << "Time: " << time << endl;
+        cout << "Price: RM" << totalPrice << endl;
+        cout << "Insurance: " << (insuranceOption == "yes" ? "Included" : "Not Included") << endl;
+        cout << "\nEnjoy your trip !\n";
+    }
+
+};
 
 int main() {
-
-    vector<Route> routes = loadRoutes();
-    vector<Route *> cart;
-
-    int choice;
-    do {
-        displaySectionTitle("Bus Booking System");
-
-        for (const auto &item: menuLabels) {
-            cout << item.first << ". " << item.second << endl;
-        }
-        cout << "Enter your choice:";
-        cin >> choice;
-
-        switch (choice) {
-            case DISPLAY_ROUTES:
-                displayRoutes(routes);
-                break;
-            case BOOK_SEAT:
-                bookSeat(routes, cart);
-                break;
-            case VIEW_CART:
-                viewCart(cart);
-                break;
-        }
-    } while (choice != 9);
+    BookingSystem system;
+    cout << "Welcome to TBS e-Book Bus Ticketing\n";
+    system.displayDestinations();
+    system.insertDestination();
+    system.displayPriceAndTimes();
+    system.insertTime();
+    system.displayRemainingSeats();
+    system.insertSeatToBook();
+    system.displayInsuranceOptions();
+    system.insertInsuranceOption();
+    system.displayTotal();
 
     return 0;
-}
-
-// Load routes
-vector<Route> loadRoutes() {
-    return {
-            {
-                    101,
-                    "Shah Alam",
-                    "Kuala Terengganu",
-                    30,
-                    55.50
-            },
-            {
-                    102,
-                    "Bandar Tasik Selatan",
-                    "Kuantan",
-                    30,
-                    40.00
-            },
-            {
-                    103,
-                    "Bandar Tasik Selatan",
-                    "Johor",
-                    50,
-                    30.00
-            },
-    };
-}
-
-void displayRoutes(const vector<Route> &routes) {
-    displaySectionTitle("Available Routes");
-    for (const auto &route: routes) {
-        cout << "Route number: " << route.routeNumber << endl;
-        cout << "Origin: " << route.origin << endl;
-        cout << "Destination: " << route.destination << endl;
-        cout << "Available seats: " << route.availableSeats << endl;
-        cout << "Fare: " << route.fare << endl;
-        cout << "-----------------" << endl;
-    }
-}
-
-// Book a seat on a route
-void bookSeat(vector<Route> &routes, vector<Route *> &cart) {
-    int routeNumber;
-    Route *route = nullptr;
-
-    cout << "Enter route number to book a seat: ";
-    cin >> routeNumber;
-
-    route = findRouteByNumber(routes, routeNumber);
-
-    if (route) {
-        if (route->availableSeats > 0) {
-            int confirmSeatBooking;
-            cout << "There are " << route->availableSeats << " seats available." << endl;
-            cout << "Enter " << CONFIRM << " to confirm or " << CANCEL << " to cancel: ";
-
-            do {
-                cin >> confirmSeatBooking;
-                if (confirmSeatBooking != CONFIRM && confirmSeatBooking != CANCEL) {
-                    cout << "Invalid option. Enter " << CONFIRM << " to confirm or " << CANCEL << " to cancel: ";
-                }
-            } while (confirmSeatBooking != CONFIRM && confirmSeatBooking != CANCEL);
-
-            if (confirmSeatBooking == CONFIRM) {
-                route->availableSeats--;
-                cout << "Successfully booked a seat on route " << routeNumber << "." << endl;
-                cart.push_back(route);
-            }
-        } else {
-            cout << "There are no seats available for this route." << endl;
-        }
-    } else {
-        displayErrorMessage("Route not found! Please try again.");
-    }
-}
-
-void viewCart(const vector<Route*>&cart) {
-    if(cart.empty()) {
-        cout << "Your cart is empty." << endl;
-    } else {
-        displaySectionTitle("Cart: Your Booked Seats");
-
-        for(const auto& route : cart) {
-            cout << "Route Number: " << route->routeNumber << endl;
-            cout << "Origin: " << route->origin << endl;
-            cout << "Destination: " << route->destination << endl;
-            cout << "Seats Available: " << route->availableSeats << endl;
-            cout << "Fare: " << currencySymbol << " " << route->fare << endl;
-            cout << "-------------------------" <<endl;
-        }
-    }
-}
-
-Route *findRouteByNumber(vector<Route> &routes, int routeNumber) {
-    for (auto &route: routes) {
-        if (route.routeNumber == routeNumber) {
-            return &route;
-        }
-    }
-    return nullptr;
-}
-
-
-void displaySectionTitle(const string &title) {
-    cout << "================================" << endl;
-    cout << title << endl;
-    cout << "================================" << endl;
-}
-
-
-void displayErrorMessage(const string &message) {
-    cout << "================================" << endl;
-    cout << "!!! ERROR: " << message << endl;
-    cout << "================================" << endl;
 }
