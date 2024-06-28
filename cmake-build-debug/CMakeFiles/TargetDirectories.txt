@@ -1,0 +1,3 @@
+/Users/afiqsazlan/Sites/study/bus-tickets/cmake-build-debug/CMakeFiles/bus_tickets.dir
+/Users/afiqsazlan/Sites/study/bus-tickets/cmake-build-debug/CMakeFiles/edit_cache.dir
+/Users/afiqsazlan/Sites/study/bus-tickets/cmake-build-debug/CMakeFiles/rebuild_cache.dir
