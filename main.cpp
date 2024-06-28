@@ -1,5 +1,6 @@
 #include <iostream>
 #include <string>
+#include <iomanip>
 using namespace std;
 
 const int maxBookings = 100;
@@ -14,16 +15,32 @@ struct Booking {
 
 const string destinations[] = {"Johor", "Melaka", "Pahang", "Kedah", "Perak"};
 const int numDestinations = 5;
-const string times[] = {"10am", "11am", "12pm", "1pm", "2pm", "3pm", "4pm", "5pm", "6pm", "7pm", "8pm", "9pm", "10pm"};
+const string departureTimes[] = {
+    "10am", "11am", "12pm", "1pm", "2pm", "3pm", "4pm", "5pm", "6pm", "7pm", "8pm", "9pm", "10pm"
+};
 const int numTimes = 13;
 const double prices[] = {35, 10, 10, 46, 27};
 int seatsAvailable[numDestinations][numTimes] = {
-    {6, 8, 3, 30, 32, 5, 10, 6, 18, 2, 6, 24, 10},  // johor
-    {6, 8, 3, 30, 32, 5, 10, 6, 18, 2, 6, 24, 10},  // melaka
-    {6, 8, 3, 30, 32, 5, 10, 6, 18, 2, 6, 24, 10},  // pahang
-    {6, 8, 3, 30, 32, 5, 10, 6, 18, 2, 6, 24, 10},  // kedah
-    {6, 8, 3, 30, 32, 5, 10, 6, 18, 2, 6, 24, 10}   // perak
+    {6, 8, 3, 30, 32, 5, 10, 6, 18, 2, 6, 24, 10}, // johor
+    {6, 8, 3, 30, 32, 5, 10, 6, 18, 2, 6, 24, 10}, // melaka
+    {6, 8, 3, 30, 32, 5, 10, 6, 18, 2, 6, 24, 10}, // pahang
+    {6, 8, 3, 30, 32, 5, 10, 6, 18, 2, 6, 24, 10}, // kedah
+    {6, 8, 3, 30, 32, 5, 10, 6, 18, 2, 6, 24, 10} // perak
 };
+
+const double INSURANCE_COST_PER_SEAT = 5.00;
+
+bool isReadyForCheckout = false;
+
+template<typename T, size_t N>
+int findIndex(const T (&array)[N], const T &value) {
+    for (size_t i = 0; i < N; ++i) {
+        if (array[i] == value) {
+            return i;
+        }
+    }
+    return -1; // Invalid index
+}
 
 class BookingSystem {
 private:
@@ -32,7 +49,7 @@ private:
     string destination;
     string time;
     double price;
-    int seatsAvailable;
+    int seatsAvailableForBooking;
     string insuranceOption;
     int seats;
     double totalPrice;
@@ -50,11 +67,20 @@ private:
 
     int getTimeIndex() {
         for (int i = 0; i < numTimes; ++i) {
-            if (time == times[i]) {
+            if (time == departureTimes[i]) {
                 return i;
             }
         }
         return -1; // Invalid time
+    }
+
+
+    double calculateTotalInsurance() {
+        double total = 0.00;
+        if (insuranceOption == "y" || insuranceOption == "Y") {
+            total = (INSURANCE_COST_PER_SEAT * seats);
+        }
+        return total;
     }
 
     void recordBooking() {
@@ -65,36 +91,54 @@ private:
         }
     }
 
+
+    void setIsReadyForCheckout() {
+        isReadyForCheckout = true;
+    }
+
 public:
-    BookingSystem() : price(0.0), seatsAvailable(0), totalPrice(0.0), bookingCount(0) {}
-
-    void displayDestinations() {
-            cout << "\nInsert your name: ";
-            getline(cin, name);
-
-            bool validIC = false;
-                while (!validIC) {
-                    cout << "\nInsert your IC number: ";
-                    cin >> icNumber;
-
-                    if (icNumber.length() == 12) {
-                        validIC = true;
-                    } else {
-                        cout << "Invalid IC number. It must contain exactly 12 characters. Please try again.\n";
-                    }
-                }
-            cout << "Destinations available: Johor, Melaka, Pahang, Perak, Kedah\n";
+    BookingSystem() : price(0.0), seatsAvailableForBooking(0), totalPrice(0.0), bookingCount(0) {
     }
 
-    void insertDestination() {
+    void displayGreetings() {
+        cout << "Welcome to TBS e-Book Bus Ticketing" << endl;
+    }
+
+    void requestPassengerDetails() {
+        cout << "\nInsert your name: ";
+        getline(cin, name);
+
+        bool validIC = false;
+        while (!validIC) {
+            cout << "\nInsert your IC number: ";
+            cin >> icNumber;
+
+            if (icNumber.length() == 12) {
+                validIC = true;
+            } else {
+                cout << "Invalid IC number length:" << icNumber.length() <<
+                        ". It must contain exactly 12 characters. Please try again.\n";
+            }
+        }
+    }
+
+    void displayAvailableDestinations() {
+        cout << "-----------------------" << endl;
+        cout << "Available Destinations:" << endl;
+        for (int i = 0; i < destinations->length(); i++) {
+            cout << i + 1 << ". " << destinations[i] << endl;
+        }
+        cout << endl;
+    }
+
+    void requestDesiredDestination() {
         bool validInput = false;
         while (!validInput) {
-
-            cout << "\nChoose your destination: ";
-            cin >> destination;
-            int index = getDestinationIndex();
-            if (index != -1) {
-                price = prices[index];
+            cout << "Choose your destination (enter a number): ";
+            int destinationNumber;
+            cin >> destinationNumber;
+            if (destinationNumber >= 1 && destinationNumber <= numDestinations) {
+                destination = destinations[destinationNumber - 1];
                 validInput = true;
             } else {
                 cout << "Wrong input, please try again\n\n";
@@ -102,24 +146,37 @@ public:
         }
     }
 
-    void displayPriceAndTimes() {
-        cout << "Price: RM" << price << endl;
-        cout << "\nAvailable times:\n";
-        for (const string& t : times) {
-            cout << t << ", ";
-        }
-        cout << "\n\n";
+    void displayTicketPrice() {
+        int index = findIndex(destinations, destination);
+
+        price = prices[index];
+
+        cout << "Ticket Price: RM" << price << endl;
     }
 
-    void insertTime() {
+    void displayAvailableDepartureTimes() {
+        int row = 1;
+
+        cout << "-----------------------" << endl;
+        cout << "Available Departure Times:" << endl;
+
+        for (const string &departureTime: departureTimes) {
+            cout << row << ". " << departureTime << endl;
+            row++;
+        }
+        cout << endl;
+    }
+
+    void requestDesiredDepartureTime() {
         bool validInput = false;
+
         while (!validInput) {
-            cout << "Enter Time: ";
-            cin >> time;
-            int index = getTimeIndex();
-            if (index != -1) {
-                int destIndex = getDestinationIndex();
-                seatsAvailable = ::seatsAvailable[destIndex][index];
+            cout << "Choose a departure time (enter a number): ";
+            int timeNumber;
+            cin >> timeNumber;
+
+            if (timeNumber >= 1 && timeNumber <= numTimes) {
+                time = departureTimes[timeNumber - 1];
                 validInput = true;
             } else {
                 cout << "Wrong input, please try again\n\n";
@@ -127,93 +184,106 @@ public:
         }
     }
 
-    void displayRemainingSeats() {
-        bool validInput = false;
-        string book;
-        while (!validInput) {
-            cout << "\nSeats available: " << seatsAvailable << endl;
-            cout << "Do you want to choose another destination or time? (yes or no): ";
-            cin >> book;
-            if (book == "yes") {
-                insertDestination();
-                displayPriceAndTimes();
-                insertTime();
-                continue;
-            } else if (book == "no") {
-                return;
-            } else {
-                cout << "Wrong input, please try again\n\n";
-            }
-        }
-    }
 
-    void insertSeatToBook() {
-        if (seatsAvailable == 0) {
+    void displayAvailableSeatsCount() {
+        int destIndex = findIndex(destinations, destination);
+        int timeIndex = findIndex(departureTimes, time);
+        seatsAvailableForBooking = seatsAvailable[destIndex][timeIndex];
+
+        if (seatsAvailableForBooking > 0) {
+            cout << "Available seats: " << seatsAvailableForBooking << " seats" << endl;
+        } else {
             cout << "\nNo seats available to book.\n";
-            return;
         }
+    }
+
+    void requestNumberOfSeatsToBook() {
         bool validInput = false;
-        do {
+        while (!validInput) {
             cout << "\nEnter number of seats to book: ";
             cin >> seats;
-            if (seats <= seatsAvailable) {
-                seatsAvailable -= seats;
+            if (seats <= seatsAvailableForBooking) {
+                seatsAvailable[findIndex(destinations, destination)][findIndex(departureTimes, time)] -= seats;
                 cout << seats << " seats successfully booked.\n";
-                cout << "Remaining seat available: " << seatsAvailable << endl;
+                cout << "Remaining seats available: " << seatsAvailableForBooking << endl;
                 validInput = true;
             } else {
                 cout << "Not enough available seats!\n";
             }
-        } while (!validInput);
+        }
     }
 
-    void displayInsuranceOptions() {
-        cout << "\nDo you want to include insurance coverage? (RM0.50 per head): Yes or No \n";
-    }
-
-    void insertInsuranceOption() {
-        cout << "Enter Insurance Option (yes/no): ";
+    void requestInsuranceAddon() {
+        cout << "Do you want to include insurance coverage? (RM " << INSURANCE_COST_PER_SEAT << " per seat)" << endl;
+        cout << "Enter Y (Yes) or N (No)" << endl;
         cin >> insuranceOption;
-        if (insuranceOption == "yes") {
-            totalPrice = (0.5 * seats) + (seats * price);
-        } else if (insuranceOption == "no") {
-            totalPrice = seats * price;
-        } else {
-            cout << "Invalid Option!\n";
-            insuranceOption = "";
+        while (insuranceOption != "y" && insuranceOption != "Y" && insuranceOption != "n" && insuranceOption != "N") {
+            cout << "Invalid Option! Please enter Y (Yes) or N (No)." << endl;
+            cin >> insuranceOption;
         }
     }
 
-    void displayTotal() {
-        if (destination.empty() || time.empty()) {
-            cout << "Booking details are incomplete.\n";
-            return;
+    void calculateTotalPrice() {
+        totalPrice = (seats * price) + calculateTotalInsurance();
+    }
+
+    void requestBookingConfirmation() {
+
+        displayBookingSummary("Review Booking");
+
+        char confirmBooking;
+        cout << endl << "Do you wish to confirm your booking?" << endl;
+        cout << "Enter Y (Yes) or N (No): ";
+        cin >> confirmBooking;
+
+        if (confirmBooking == 'Y' || confirmBooking == 'y') {
+            setIsReadyForCheckout();
+            recordBooking();
+            displayBookingConfirmation();
+        } else {
+            cout << "Returning to main menu." << endl;
         }
-        recordBooking();
-        cout << "\nSummary of Booking:\n";
+    }
+
+    void displayBookingSummary(string title = "") {
+        cout << "---------------------" << endl;
+        cout << endl << title << endl;
+        cout << "---------------------" << endl;
         cout << "Name: " << name << endl;
         cout << "IC Number: " << icNumber << endl;
         cout << "Destination: " << destination << endl;
         cout << "Time: " << time << endl;
-        cout << "Price: RM" << totalPrice << endl;
-        cout << "Insurance: " << (insuranceOption == "yes" ? "Included" : "Not Included") << endl;
-        cout << "\nEnjoy your trip !\n";
+        cout << "Total Price: RM" << fixed << setprecision(2) << totalPrice << endl;
+        cout << "Insurance: " << (insuranceOption == "y" || insuranceOption == "Y" ? "Included" : "Not Included") <<
+                endl;
     }
 
+    void displayBookingConfirmation() {
+        displayBookingSummary("Booking Summary");
+        cout << endl << "Booking confirmed. Enjoy your trip!" << endl;
+    }
 };
 
 int main() {
     BookingSystem system;
-    cout << "Welcome to TBS e-Book Bus Ticketing\n";
-    system.displayDestinations();
-    system.insertDestination();
-    system.displayPriceAndTimes();
-    system.insertTime();
-    system.displayRemainingSeats();
-    system.insertSeatToBook();
-    system.displayInsuranceOptions();
-    system.insertInsuranceOption();
-    system.displayTotal();
+
+    system.displayGreetings();
+    system.requestPassengerDetails();
+
+    while (!isReadyForCheckout) {
+        system.displayAvailableDestinations();
+        system.requestDesiredDestination();
+        system.displayTicketPrice();
+        system.displayAvailableDepartureTimes();
+        system.requestDesiredDepartureTime();
+        system.displayAvailableSeatsCount();
+        system.requestNumberOfSeatsToBook();
+        system.requestInsuranceAddon();
+        system.calculateTotalPrice();
+        system.requestBookingConfirmation();
+    }
+
+    system.displayBookingConfirmation();
 
     return 0;
 }
