@@ -1,6 +1,7 @@
 #include <iostream>
 #include <string>
 #include <iomanip>
+#include <fstream>
 using namespace std;
 
 const int maxBookings = 100;
@@ -12,6 +13,8 @@ struct Booking {
     bool insurance;
     double totalPrice;
 };
+
+namespace fs = std::filesystem;
 
 const string destinations[] = {"Johor", "Melaka", "Pahang", "Kedah", "Perak"};
 const int numDestinations = 5;
@@ -227,6 +230,25 @@ public:
         totalPrice = (seats * price) + calculateTotalInsurance();
     }
 
+    void displayAgreement() {
+        string line;
+
+        const string filePath = std::filesystem::current_path() / "agreement.txt";
+
+        ifstream MyReadFile(filePath);
+
+        if (!MyReadFile.is_open()) {
+            cerr << "Error opening the file!" << endl;
+            return;
+        }
+
+        while (getline (MyReadFile, line)) {
+            cout << line << endl;
+        }
+
+        MyReadFile.close();
+    }
+
     void requestBookingConfirmation() {
 
         displayBookingSummary("Review Booking");
@@ -280,6 +302,7 @@ int main() {
         system.requestNumberOfSeatsToBook();
         system.requestInsuranceAddon();
         system.calculateTotalPrice();
+        system.displayAgreement();
         system.requestBookingConfirmation();
     }
 
