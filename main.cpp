@@ -1,11 +1,15 @@
 #include <iostream>
 #include <string>
 #include <iomanip>
+#include <fstream>
+#include <sstream>
 using namespace std;
 
 const int maxBookings = 100;
 
 struct Booking {
+    string name;
+    string icNumber;
     string destination;
     string time;
     int seats;
@@ -42,6 +46,58 @@ int findIndex(const T (&array)[N], const T &value) {
     return -1; // Invalid index
 }
 
+// Function to read bookings from a file
+int readBookingsFromFile(Booking bookings[], const string& filename) {
+    ifstream inputFile(filename);
+    int numBookingsRead = 0;
+
+    if (!inputFile.is_open()) {
+        cerr << "Error opening booking file: " << filename << endl;
+        return numBookingsRead;
+    }
+
+    string line;
+    while (getline(inputFile, line) && numBookingsRead < maxBookings) {
+        stringstream ss(line);
+        getline(ss, bookings[numBookingsRead].name, ',');
+        getline(ss, bookings[numBookingsRead].icNumber, ',');
+        getline(ss, bookings[numBookingsRead].destination, ',');
+        getline(ss, bookings[numBookingsRead].time, ',');
+        ss >> bookings[numBookingsRead].seats;
+        ss.ignore();
+        ss >> bookings[numBookingsRead].insurance;
+        ss.ignore();
+        ss >> bookings[numBookingsRead].totalPrice;
+        numBookingsRead++;
+    }
+
+    inputFile.close();
+    return numBookingsRead;
+}
+
+// Function to write bookings to a file
+bool writeBookingsToFile(const Booking bookings[], int numBookings, const string& filename) {
+    ofstream outputFile(filename);
+
+    if (!outputFile.is_open()) {
+        cerr << "Error opening booking file: " << filename << endl;
+        return false;
+    }
+
+    for (int i = 0; i < numBookings; ++i) {
+        outputFile << "Name: " << bookings[i].name << ", ";
+        outputFile << "IC Number: " << bookings[i].icNumber << ", ";
+        outputFile << "Destination: " << bookings[i].destination << ", ";
+        outputFile << "Time: " << bookings[i].time << ", ";
+        outputFile << "Seats: " << bookings[i].seats << ", ";
+        outputFile << "Insurance Opt: " << (bookings[i].insurance ? "Y" : "N") << ", ";
+        outputFile << "RM" << fixed << setprecision(2) << bookings[i].totalPrice << endl;
+    }
+
+    outputFile.close();
+    return true;
+}
+
 class BookingSystem {
 private:
     string name;
@@ -57,23 +113,12 @@ private:
     int bookingCount;
 
     int getDestinationIndex() {
-        for (int i = 0; i < numDestinations; ++i) {
-            if (destination == destinations[i]) {
-                return i;
-            }
-        }
-        return -1; // Invalid destination
+        return findIndex(destinations, destination);
     }
 
     int getTimeIndex() {
-        for (int i = 0; i < numTimes; ++i) {
-            if (time == departureTimes[i]) {
-                return i;
-            }
-        }
-        return -1; // Invalid time
+        return findIndex(departureTimes, time);
     }
-
 
     double calculateTotalInsurance() {
         double total = 0.00;
@@ -85,12 +130,11 @@ private:
 
     void recordBooking() {
         if (bookingCount < maxBookings) {
-            bookings[bookingCount++] = {destination, time, seats, (insuranceOption == "yes"), totalPrice};
+            bookings[bookingCount++] = {name, icNumber, destination, time, seats, (insuranceOption == "y" || insuranceOption == "Y"), totalPrice};
         } else {
             cout << "Booking record is full!\n";
         }
     }
-
 
     void setIsReadyForCheckout() {
         isReadyForCheckout = true;
@@ -98,6 +142,11 @@ private:
 
 public:
     BookingSystem() : price(0.0), seatsAvailableForBooking(0), totalPrice(0.0), bookingCount(0) {
+        bookingCount = readBookingsFromFile(bookings, "bookings.txt");
+    }
+
+    ~BookingSystem() {
+        writeBookingsToFile(bookings, bookingCount, "bookings.txt");
     }
 
     void displayGreetings() {
@@ -106,7 +155,7 @@ public:
 
     void requestPassengerDetails() {
         cout << "\nInsert your name: ";
-        getline(cin, name);
+        getline(cin >> ws, name);
 
         bool validIC = false;
         while (!validIC) {
@@ -116,7 +165,7 @@ public:
             if (icNumber.length() == 12) {
                 validIC = true;
             } else {
-                cout << "Invalid IC number length:" << icNumber.length() <<
+                cout << "Invalid IC number length: " << icNumber.length() <<
                         ". It must contain exactly 12 characters. Please try again.\n";
             }
         }
@@ -125,7 +174,7 @@ public:
     void displayAvailableDestinations() {
         cout << "-----------------------" << endl;
         cout << "Available Destinations:" << endl;
-        for (int i = 0; i < destinations->length(); i++) {
+        for (int i = 0; i < numDestinations; i++) {
             cout << i + 1 << ". " << destinations[i] << endl;
         }
         cout << endl;
@@ -148,19 +197,15 @@ public:
 
     void displayTicketPrice() {
         int index = findIndex(destinations, destination);
-
         price = prices[index];
-
         cout << "Ticket Price: RM" << price << endl;
     }
 
     void displayAvailableDepartureTimes() {
         int row = 1;
-
         cout << "-----------------------" << endl;
         cout << "Available Departure Times:" << endl;
-
-        for (const string &departureTime: departureTimes) {
+        for (const string &departureTime : departureTimes) {
             cout << row << ". " << departureTime << endl;
             row++;
         }
@@ -169,12 +214,10 @@ public:
 
     void requestDesiredDepartureTime() {
         bool validInput = false;
-
         while (!validInput) {
             cout << "Choose a departure time (enter a number): ";
             int timeNumber;
             cin >> timeNumber;
-
             if (timeNumber >= 1 && timeNumber <= numTimes) {
                 time = departureTimes[timeNumber - 1];
                 validInput = true;
@@ -184,10 +227,9 @@ public:
         }
     }
 
-
     void displayAvailableSeatsCount() {
-        int destIndex = findIndex(destinations, destination);
-        int timeIndex = findIndex(departureTimes, time);
+        int destIndex = getDestinationIndex();
+        int timeIndex = getTimeIndex();
         seatsAvailableForBooking = seatsAvailable[destIndex][timeIndex];
 
         if (seatsAvailableForBooking > 0) {
@@ -203,9 +245,9 @@ public:
             cout << "\nEnter number of seats to book: ";
             cin >> seats;
             if (seats <= seatsAvailableForBooking) {
-                seatsAvailable[findIndex(destinations, destination)][findIndex(departureTimes, time)] -= seats;
+                seatsAvailable[getDestinationIndex()][getTimeIndex()] -= seats;
                 cout << seats << " seats successfully booked.\n";
-                cout << "Remaining seats available: " << seatsAvailableForBooking << endl;
+                cout << "Remaining seats available: " << seatsAvailableForBooking - seats << endl;
                 validInput = true;
             } else {
                 cout << "Not enough available seats!\n";
@@ -228,7 +270,6 @@ public:
     }
 
     void requestBookingConfirmation() {
-
         displayBookingSummary("Review Booking");
 
         char confirmBooking;
@@ -254,8 +295,7 @@ public:
         cout << "Destination: " << destination << endl;
         cout << "Time: " << time << endl;
         cout << "Total Price: RM" << fixed << setprecision(2) << totalPrice << endl;
-        cout << "Insurance: " << (insuranceOption == "y" || insuranceOption == "Y" ? "Included" : "Not Included") <<
-                endl;
+        cout << "Insurance: " << (insuranceOption == "y" || insuranceOption == "Y" ? "Included" : "Not Included") << endl;
     }
 
     void displayBookingConfirmation() {
@@ -282,8 +322,6 @@ int main() {
         system.calculateTotalPrice();
         system.requestBookingConfirmation();
     }
-
-    system.displayBookingConfirmation();
 
     return 0;
 }
