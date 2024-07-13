@@ -3,6 +3,8 @@
 #include <iomanip>
 #include <fstream>
 #include <sstream>
+#include <algorithm> 
+#include <cctype> 
 using namespace std;
 
 const int maxBookings = 100;
@@ -98,6 +100,18 @@ bool writeBookingsToFile(const Booking bookings[], int numBookings, const string
     return true;
 }
 
+bool isAlphabetic(const std::string& str) {
+    return !str.empty() && std::all_of(str.begin(), str.end(), [](char c) {
+        return std::isalpha(c);
+    });
+}
+
+bool isAllDigits(const std::string& str) {
+    return std::all_of(str.begin(), str.end(), [](char c) {
+        return std::isdigit(c);
+    });
+}
+
 class BookingSystem {
 private:
     string name;
@@ -154,21 +168,33 @@ public:
     }
 
     void requestPassengerDetails() {
+        bool validName = false;
+    while (!validName) {
         cout << "\nInsert your name: ";
         getline(cin >> ws, name);
-
-        bool validIC = false;
-        while (!validIC) {
-            cout << "\nInsert your IC number: ";
-            cin >> icNumber;
-
-            if (icNumber.length() == 12) {
-                validIC = true;
-            } else {
-                cout << "Invalid IC number length: " << icNumber.length() <<
-                        ". It must contain exactly 12 characters. Please try again.\n";
-            }
+        
+        if (isAlphabetic(name)) {
+            validName = true;
+        } else {
+            cout << "Invalid name. Name must contain only alphabetic characters and must not be empty. Please try again.\n";
         }
+	}
+        bool validIC = false;
+	    while (!validIC) {
+	        cout << "\nInsert your IC number: ";
+	        cin >> icNumber;
+	
+	        if (icNumber.length() == 12 && isAllDigits(icNumber)) {
+	            validIC = true;
+	        } else {
+	            if (icNumber.length() != 12) {
+	                cout << "Invalid IC number length: " << icNumber.length() <<
+	                        ". It must contain exactly 12 characters. Please try again.\n";
+	            } else {
+	                cout << "Invalid IC number. It must contain only digits. Please try again.\n";
+	            }
+	        }
+	    }
     }
 
     void displayAvailableDestinations() {
@@ -244,12 +270,15 @@ public:
         while (!validInput) {
             cout << "\nEnter number of seats to book: ";
             cin >> seats;
-            if (seats <= seatsAvailableForBooking) {
+            if (seats <= seatsAvailableForBooking && seats != 0  ) {
                 seatsAvailable[getDestinationIndex()][getTimeIndex()] -= seats;
                 cout << seats << " seats successfully booked.\n";
                 cout << "Remaining seats available: " << seatsAvailableForBooking - seats << endl;
                 validInput = true;
-            } else {
+            }else if (seats == 0){
+				cout << "seats cannot be 0";
+			} 
+			else {
                 cout << "Not enough available seats!\n";
             }
         }
@@ -276,14 +305,18 @@ public:
         cout << endl << "Do you wish to confirm your booking?" << endl;
         cout << "Enter Y (Yes) or N (No): ";
         cin >> confirmBooking;
-
-        if (confirmBooking == 'Y' || confirmBooking == 'y') {
+        while (confirmBooking != 'y' && confirmBooking != 'Y' && confirmBooking != 'n' && confirmBooking != 'N') {
+		    cout << "Invalid input. Please enter 'y' or 'n': ";
+		    cin >> confirmBooking;
+		}
+		if (confirmBooking == 'Y' || confirmBooking == 'y') {
             setIsReadyForCheckout();
             recordBooking();
             displayBookingConfirmation();
         } else {
             cout << "Returning to main menu." << endl;
         }
+        
     }
 
     void displayBookingSummary(string title = "") {
